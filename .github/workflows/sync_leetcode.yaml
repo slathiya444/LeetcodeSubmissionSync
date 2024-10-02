@@ -38,15 +38,27 @@ jobs:
 
           def fetch_submissions(last_timestamp):
               url = "https://leetcode.com/api/submissions/"
+              cookies = {
+                  "LEETCODE_SESSION": os.environ["LEETCODE_SESSION"],
+                  "csrftoken": os.environ["LEETCODE_CSRF_TOKEN"]
+              }
               headers = {
                   "X-CSRFToken": os.environ["LEETCODE_CSRF_TOKEN"],
-                  "Cookie": f"LEETCODE_SESSION={os.environ['LEETCODE_SESSION']}; csrftoken={os.environ['LEETCODE_CSRF_TOKEN']}"
+                  "Referer": "https://leetcode.com/",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
               }
               params = {"offset": 0, "limit": 20}
+              
+              print("Debug: Cookies:", json.dumps(cookies))
+              print("Debug: Headers:", json.dumps(headers))
+              
               all_submissions = []
               
               while True:
-                  response = requests.get(url, headers=headers, params=params)
+                  response = requests.get(url, headers=headers, cookies=cookies, params=params)
+                  print(f"Debug: API Response Status Code: {response.status_code}")
+                  print(f"Debug: API Response Headers: {json.dumps(dict(response.headers))}")
+                  
                   if response.status_code != 200:
                       print(f"Error: API returned status code {response.status_code}")
                       print(f"Response content: {response.text}")
