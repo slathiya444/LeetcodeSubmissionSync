@@ -31,6 +31,7 @@ jobs:
           import requests
           from datetime import datetime
           import json
+          import sys
 
           DUMP_FOLDER = 'leetcode_sync_dump'
           LAST_SYNC_FILE = os.path.join(DUMP_FOLDER, '.last_sync')
@@ -46,7 +47,24 @@ jobs:
               
               while True:
                   response = requests.get(url, headers=headers, params=params)
-                  submissions = response.json()["submissions_dump"]
+                  if response.status_code != 200:
+                      print(f"Error: API returned status code {response.status_code}")
+                      print(f"Response content: {response.text}")
+                      sys.exit(1)
+                  
+                  try:
+                      data = response.json()
+                  except json.JSONDecodeError:
+                      print(f"Error: Unable to parse JSON response")
+                      print(f"Response content: {response.text}")
+                      sys.exit(1)
+                  
+                  if 'submissions_dump' not in data:
+                      print(f"Error: 'submissions_dump' not found in API response")
+                      print(f"Response content: {json.dumps(data, indent=2)}")
+                      sys.exit(1)
+                  
+                  submissions = data["submissions_dump"]
                   if not submissions:
                       break
                   
@@ -89,6 +107,8 @@ jobs:
               latest_timestamp = max(latest_timestamp, timestamp)
 
           save_last_sync_timestamp(latest_timestamp)
+          
+          print(f"Successfully processed {len(submissions)} new submissions.")
           EOF
 
       - name: Commit and push changes
